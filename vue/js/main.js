@@ -38,10 +38,22 @@ Vue.component('task-card', {
                 this.saveTasks();
             }
         },
-        saveTasks(){
+        saveTasks() {
             const cards = JSON.parse(localStorage.getItem('cards')) || [];
-            const cardIndex = this.$parent.cards.indexOf(this.card);
-            cards[cardIndex] = this.card;
+            const cardIndex = cards.findIndex(c => c.id === this.card.id); // Ищем карточку по id
+
+            if (cardIndex !== -1) {
+                cards[cardIndex] = {
+                    ...this.card,
+                    tasks: this.card.tasks.map(task => ({ ...task })) // Глубокая копия задач
+                };
+            } else {
+                cards.push({
+                    ...this.card,
+                    tasks: this.card.tasks.map(task => ({ ...task }))
+                });
+            }
+
             localStorage.setItem('cards', JSON.stringify(cards));
         },
         checkCompletion() {
@@ -67,11 +79,12 @@ Vue.component('task-card', {
     },
     mounted() {
         const cards = JSON.parse(localStorage.getItem('cards')) || [];
-        const cardIndex = this.$parent.cards.indexOf(this.card);
-        if (cards[cardIndex] && cards[cardIndex].tasks) {
-            this.card.tasks = cards[cardIndex].tasks;
+        const savedCard = cards.find(c => c.id === this.card.id); // Ищем сохранённую карточку по id
+
+        if (savedCard && savedCard.tasks) {
+            this.card.tasks = savedCard.tasks.map(task => ({ ...task })); // Глубокая копия задач
         } else {
-            this.card.tasks = []; // Инициализация tasks, если он undefined
+            this.card.tasks = []; // Инициализация пустого массива задач
         }
     }
 });
@@ -144,6 +157,7 @@ new Vue({
             if (this.newCardTitle) {
                 this.cards.push({
                     title: this.newCardTitle,
+                    id: Date.now(),
                     tasks: [],
                     moved: false,
                     finalMoved: false,
