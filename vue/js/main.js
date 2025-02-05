@@ -1,5 +1,5 @@
 Vue.component('task-card', {
-    props: ['card'],
+    props: ['card', 'currentColumnIndex'],
     template: `
     <div class="task-card">
         <h3>{{ card.title }}</h3>
@@ -54,10 +54,10 @@ Vue.component('task-card', {
 
                     // Перемещение карточки между столбцами
                     if (completionRate > 50 && completionRate <= 100) {
-                        this.$emit('move-to-next', this.card); // Перемещение во второй столбец
+                        this.$emit('move-to-next', this.card, this.currentColumnIndex);
                     } else if (completionRate === 100) {
                         this.card.lastUpdated = new Date().toLocaleString(); // Установка времени последнего обновления
-                        this.$emit('move-to-next', this.card); // Перемещение в третий столбец
+                        this.$emit('move-to-next', this.card, this.currentColumnIndex);
                     }
 
                     this.saveTasks();
@@ -85,13 +85,14 @@ Vue.component('column1', {
             v-for="(card, index) in cards" 
             :key="index" 
             :card="card" 
+            :currentColumnIndex="0"
             @move-to-next="moveToNext"
         ></task-card>
     </div>
     `,
     methods: {
-        moveToNext(card) {
-            this.$emit('move-to-next', card);
+        moveToNext(card,currentColumnIndex) {
+            this.$emit('move-to-next', card,currentColumnIndex);
         }
     }
 });
@@ -104,13 +105,14 @@ Vue.component('column2', {
             v-for="(card, index) in cards" 
             :key="index" 
             :card="card" 
+            :currentColumnIndex="1"
             @move-to-next="moveToNext"
         ></task-card>
     </div>
     `,
     methods: {
-        moveToNext(card) {
-            this.$emit('move-to-next', card);
+        moveToNext(card,currentColumnIndex) {
+            this.$emit('move-to-next', card, currentColumnIndex);
         }
     }
 });
@@ -123,6 +125,7 @@ Vue.component('column3', {
             v-for="(card, index) in cards" 
             :key="index" 
             :card="card"
+            :currentColumnIndex="2"
         ></task-card>
     </div>
     `
@@ -142,6 +145,8 @@ new Vue({
                 this.cards.push({
                     title: this.newCardTitle,
                     tasks: [],
+                    moved: false,
+                    finalMoved: false,
                     lastUpdated: null });
 
                 this.newCardTitle = ''; // Очистка поля ввода заголовка
@@ -155,18 +160,18 @@ new Vue({
             this.cards = [];
             localStorage.removeItem('cards');
         },
-        moveCardToNext(card) {
+        moveCardToNext(card, currentColumnIndex) {
             const cardIndex = this.cards.indexOf(card);
 
             if (cardIndex !== -1 && card.tasks) {
                 const completedTasks = card.tasks.filter(task => task.completed).length;
-                if (completedTasks > 0 && cardIndex < 2) {
-                    const nextColumnIndex = Math.min(cardIndex + 1, 2);
-                    const nextColumnCards = this.cards.splice(cardIndex, 1);
-                    if (!this.cards[nextColumnIndex]) {
-                        this.cards[nextColumnIndex] = [];
+                const totalTasks = card.tasks.length;
+
+                if (completedTasks > totalTasks / 2 && currentColumnIndex < 2) {
+                    card.moved = true;
+                    if (completedTasks === totalTasks) {
+                        card.finalMoved = true;
                     }
-                    this.cards[nextColumnIndex].push(nextColumnCards[0]);
                     this.saveCards();
                 }
             }
