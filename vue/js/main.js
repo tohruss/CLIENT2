@@ -1,15 +1,21 @@
 Vue.component('task-card', {
-    props: ['card', 'currentColumnIndex'],
+    props: ['card', 'currentColumnIndex', 'isFirstColumnLocked'],
     template: `
     <div class="task-card">
         <h3>{{ card.title }}</h3>
         <ul v-if="card.tasks && card.tasks.length > 0">
             <li v-for="(task, index) in card.tasks" :key="index">
-                <input type="checkbox" v-model="task.completed" @change="checkCompletion">
+                <input 
+                    type="checkbox" 
+                    v-model="task.completed" 
+                    :disabled="currentColumnIndex === 2 || (currentColumnIndex === 0 && isFirstColumnLocked)" 
+                    @change="checkCompletion"
+                />
                 {{ task.text }}
                 <span v-if="task.completed">(ВЫПОЛНЕННО)</span>
             </li>
         </ul>
+        <div v-if="!currentColumnIndex && !isFirstColumnLocked">
         <input 
             type="text" 
             v-model="newTask" 
@@ -17,9 +23,12 @@ Vue.component('task-card', {
             @keyup.enter="addTask"
         />
         <button @click="addTask" :disabled="card.tasks.length >= 5">Добавить</button>
-        <p v-if="card.tasks.length < 3" style="color: red;">Вам нужно добавить минимум 3 задачи!</p>
-        <p v-if="card.tasks.length >= 5" style="color: red;">Вы можете добавить не более 5 задач!</p>
-        <p v-if="card.lastUpdated">Последнее обновление: {{ card.lastUpdated }}</p>
+        </div>
+        <div v-if="!currentColumnIndex && !isFirstColumnLocked">
+            <p v-if="card.tasks.length < 3" style="color: red;">Вам нужно добавить минимум 3 задачи!</p>
+            <p v-if="card.tasks.length >= 5" style="color: red;">Вы можете добавить не более 5 задач!</p>
+        </div>
+        <p v-if="card.finalMoved && card.lastUpdated" style="font-weight: bold">Выполнено: {{ card.lastUpdated }}</p>
     </div>
     `,
     data() {
@@ -90,25 +99,27 @@ Vue.component('task-card', {
 });
 
 Vue.component('column1', {
-    props: ['cards'],
+    props: ['cards', 'isFirstColumnLocked'],
     template: `
     <div class="column">
         <h2>Столбец 1</h2>
         <task-card 
             v-for="(card, index) in cards" 
             :key="index" 
-            :card="card" 
+            :card="card"
             :currentColumnIndex="0"
+            :isFirstColumnLocked="isFirstColumnLocked"
             @move-to-next="moveToNext"
         ></task-card>
     </div>
     `,
     methods: {
-        moveToNext(card,currentColumnIndex) {
-            this.$emit('move-to-next', card,currentColumnIndex);
+        moveToNext(card, currentColumnIndex) {
+            this.$emit('move-to-next', card, currentColumnIndex);
         }
     }
 });
+
 Vue.component('column2', {
     props: ['cards'],
     template: `
@@ -124,11 +135,12 @@ Vue.component('column2', {
     </div>
     `,
     methods: {
-        moveToNext(card,currentColumnIndex) {
+        moveToNext(card, currentColumnIndex) {
             this.$emit('move-to-next', card, currentColumnIndex);
         }
     }
 });
+
 Vue.component('column3', {
     props: ['cards'],
     template: `
@@ -149,22 +161,37 @@ new Vue({
     data() {
         return {
             cards: [],
-            newCardTitle: ''
+            newCardTitle: '',
+            isFirstColumnLocked: false // Состояние блокировки первой колонки
         };
+    },
+    computed: {
+        // Проверяем, заполнена ли вторая колонка
+        isSecondColumnFull() {
+            return this.cards.filter(card => card.moved && !card.finalMoved).length >= 5;
+        }
     },
     methods: {
         addCard() {
-            if (this.newCardTitle) {
-                this.cards.push({
-                    title: this.newCardTitle,
-                    id: Date.now(),
-                    tasks: [],
-                    moved: false,
-                    finalMoved: false,
-                    lastUpdated: null });
+            const cardsInFirstColumn = this.cards.filter(card => !card.moved).length; // кол-во первой колонки
 
-                this.newCardTitle = ''; // Очистка поля ввода заголовка
-                this.saveCards();
+            if (this.newCardTitle) {
+                // В первой колонне не более 3 карточек
+                if (cardsInFirstColumn < 3) {
+                    this.cards.push({
+                        title: this.newCardTitle,
+                        id: Date.now(),
+                        tasks: [],
+                        moved: false,
+                        finalMoved: false,
+                        lastUpdated: null
+                    });
+
+                    this.newCardTitle = ''; // Очистка поля ввода заголовка
+                    this.saveCards();
+                } else {
+                    alert('В первой колонне может быть не более 3 карточек.');
+                }
             }
         },
         saveCards() {
@@ -181,10 +208,19 @@ new Vue({
                 const completedTasks = card.tasks.filter(task => task.completed).length;
                 const totalTasks = card.tasks.length;
 
+                // Проверяем, заполнена ли вторая колонка
+                if (currentColumnIndex === 0 && completedTasks > totalTasks / 2 && this.isSecondColumnFull) {
+                    this.isFirstColumnLocked = true; // Блокируем первую колонку
+                    alert('Во второй колонне может быть не более 5 карточек. Первая колонка заблокирована.');
+                    return;
+                }
+
                 if (completedTasks > totalTasks / 2 && currentColumnIndex < 2) {
                     card.moved = true;
                     if (completedTasks === totalTasks) {
                         card.finalMoved = true;
+                        card.lastUpdated = new Date().toLocaleString();
+                        this.isFirstColumnLocked = false; // Разблокируем первую колонку
                     }
                     this.saveCards();
                 }
@@ -205,16 +241,22 @@ new Vue({
             v-model="newCardTitle" 
             placeholder="Введите название карточки" 
         />
-        <button @click="addCard">Добавить карточку</button>
+        <button @click="addCard" :disabled="cards.filter(card => !card.moved).length >= 3">Добавить карточку</button>
         <button @click="deleteAllCards">Удалить все карточки</button>
         <div class="tables">
-            <column1 :cards="cards.filter(card => !card.moved)" @move-to-next="moveCardToNext"></column1>
-            <column2 :cards="cards.filter(card => card.moved && !card.finalMoved)" @move-to-next="moveCardToNext"></column2>
-            <column3 :cards="cards.filter(card => card.finalMoved)"></column3>
+            <column1 
+                :cards="cards.filter(card => !card.moved)" 
+                :isFirstColumnLocked="isFirstColumnLocked" 
+                @move-to-next="moveCardToNext"
+            ></column1>
+            <column2 
+                :cards="cards.filter(card => card.moved && !card.finalMoved)" 
+                @move-to-next="moveCardToNext"
+            ></column2>
+            <column3 
+                :cards="cards.filter(card => card.finalMoved)"
+            ></column3>
         </div>
     </div>
     `
 });
-
-
-
