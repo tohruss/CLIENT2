@@ -5,9 +5,48 @@
 .app {
     font-family: Arial, sans-serif;
     margin: 20px;
+    background-color: #D3D3D3;
+
+}
+.navmenu{
+    display: flex;
+    justify-content: center;
+}
+.navmenu input[type="text"]{
+    width: 170px;
+}
+button:not(DELITE){
+    color: black;
+    background-color: #98FB98;
+    border: 2px solid #3CB371;
+    border-radius: 10px;
+    padding: 10px;
+    margin: 20px;
+}
+button:not(DELITE):hover{
+    background-color: #32CD32;
+    border: 2px solid #228B22;
+}
+.DELITE{
+    background-color: #FA8072;
+    border: 2px solid #B22222;
+    border-radius: 10px;
+    padding: 10px;
+    margin: 20px;
+}
+.DELITE:hover{
+    background-color: #CD5C5C;
+    border: 2px solid #8B0000;
+}
+input{
+    padding: 5px;
+    margin: 10px;
+    border-radius: 5px;
 }
 .task-card {
-    border: 1px solid #ccc;
+    background-color: #D3D3D3;
+    border: 2px solid #ccc;
+    border-radius: 10px;
     padding: 10px;
     margin: 20px;
 }
@@ -21,3 +60,16 @@
     display: flex;
     justify-content: space-between;
 }
+.column{
+
+    height: 50%;
+    background-color: #696969;
+    border-radius: 10px;
+}
+.column >h2{
+    display: flex;
+    justify-content: center;
+    color: white;
+    padding-top: 20px;
+}
+

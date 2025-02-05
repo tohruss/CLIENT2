@@ -2,9 +2,9 @@ Vue.component('task-card', {
     props: ['card', 'currentColumnIndex', 'isFirstColumnLocked'],
     template: `
     <div class="task-card">
-        <h3>{{ card.title }}</h3>
+        <h3>Задача: {{ card.title }}</h3>
         <ul v-if="card.tasks && card.tasks.length > 0">
-            <li v-for="(task, index) in card.tasks" :key="index">
+            <li  v-for="(task, index) in card.tasks" :key="index">
                 <input 
                     type="checkbox" 
                     v-model="task.completed" 
@@ -12,7 +12,7 @@ Vue.component('task-card', {
                     @change="checkCompletion"
                 />
                 {{ task.text }}
-                <span v-if="task.completed">(ВЫПОЛНЕННО)</span>
+                <span  v-if="task.completed" style="color: green">(ВЫПОЛНЕННО)</span>
             </li>
         </ul>
         <div v-if="!currentColumnIndex && !isFirstColumnLocked">
@@ -102,7 +102,7 @@ Vue.component('column1', {
     props: ['cards', 'isFirstColumnLocked'],
     template: `
     <div class="column">
-        <h2>Столбец 1</h2>
+        <h2>Новые задачи</h2>
         <task-card 
             v-for="(card, index) in cards" 
             :key="index" 
@@ -124,7 +124,7 @@ Vue.component('column2', {
     props: ['cards'],
     template: `
     <div class="column">
-        <h2>Столбец 2</h2>
+        <h2>Задачи в процессе</h2>
         <task-card 
             v-for="(card, index) in cards" 
             :key="index" 
@@ -145,7 +145,7 @@ Vue.component('column3', {
     props: ['cards'],
     template: `
     <div class="column">
-        <h2>Столбец 3</h2>
+        <h2>Выполненные задачи</h2>
         <task-card 
             v-for="(card, index) in cards" 
             :key="index" 
@@ -236,13 +236,15 @@ new Vue({
     },
     template: `
     <div class="app">
-        <input 
-            type="text" 
-            v-model="newCardTitle" 
-            placeholder="Введите название карточки" 
-        />
-        <button @click="addCard" :disabled="cards.filter(card => !card.moved).length >= 3">Добавить карточку</button>
-        <button @click="deleteAllCards">Удалить все карточки</button>
+        <div class="navmenu">
+            <input 
+                type="text" 
+                v-model="newCardTitle" 
+                placeholder="Введите название карточки" 
+            />
+            <button @click="addCard" :disabled="cards.filter(card => !card.moved).length >= 3">Добавить карточку</button>
+            <button class="DELITE" @click="deleteAllCards">Удалить все карточки</button>
+        </div>
         <div class="tables">
             <column1 
                 :cards="cards.filter(card => !card.moved)" 
