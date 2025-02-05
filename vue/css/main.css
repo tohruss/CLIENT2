@@ -7,6 +7,7 @@
     margin: 20px;
 }
 .task-card {
+    width: 20%;
     border: 1px solid #ccc;
     padding: 10px;
     margin-bottom: 20px;
