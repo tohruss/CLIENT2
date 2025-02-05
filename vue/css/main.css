@@ -7,14 +7,17 @@
     margin: 20px;
 }
 .task-card {
-    width: 20%;
     border: 1px solid #ccc;
     padding: 10px;
-    margin-bottom: 20px;
+    margin: 20px;
 }
 .task-card  li{
     list-style-type: none;
 }
 .task-card input[type="text"] {
     margin-right: 10px;
+}
+.tables{
+    display: flex;
+    justify-content: space-between;
 }
